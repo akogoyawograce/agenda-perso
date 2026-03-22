@@ -3,7 +3,6 @@ const { supabase } = require('../services/supabase');
 const { authMiddleware } = require('../middlewares/auth');
 const router = express.Router();
 
-// Toutes les routes nécessitent d'être connecté
 router.use(authMiddleware);
 
 // GET /api/events?month=2026-03
@@ -28,6 +27,63 @@ router.get('/', async (req, res) => {
     res.json(data);
 });
 
+// GET /api/events/search?q=...
+router.get('/search', async (req, res) => {
+    const { q } = req.query;
+    if (!q) return res.status(400).json({ error: 'Paramètre q requis' });
+
+    const { data, error } = await supabase
+        .from('events')
+        .select('*, categories(name, color)')
+        .eq('user_id', req.user.id)
+        .ilike('title', `%${q}%`);
+
+    if (error) return res.status(500).json({ error: error.message });
+    res.json(data);
+});
+
+// POST /api/events/import-preview
+router.post('/import-preview', async (req, res) => {
+    const { url } = req.body
+    if (!url) return res.status(400).json({ error: 'URL requise' })
+
+    try {
+        const ical = require('node-ical')
+        const events = await ical.async.fromURL(url)
+        const result = []
+
+        for (const key in events) {
+            const event = events[key]
+            if (event.type !== 'VEVENT') continue
+
+            const startDate = event.start ? new Date(event.start) : null
+            const endDate = event.end ? new Date(event.end) : null
+            if (!startDate) continue
+
+            result.push({
+                title: event.summary || 'Événement importé',
+                description: event.description || '',
+                location: event.location || '',
+                start_at: startDate.toISOString(),
+                end_at: endDate ? endDate.toISOString() : null,
+                date: startDate.toISOString().split('T')[0],
+                time: startDate.toTimeString().slice(0, 5),
+                color: '#1A73E8',
+                reminders: [],
+            })
+        }
+
+        if (result.length === 0) {
+            return res.status(400).json({ error: 'Aucun événement trouvé dans ce lien' })
+        }
+
+        res.json(result)
+    } catch (err) {
+        console.error('Import iCal error:', err.message)
+        res.status(400).json({ error: 'Impossible de lire ce lien iCal' })
+    }
+})
+
 // POST /api/events
 router.post('/', async (req, res) => {
     const { title, description, start_at, end_at, all_day,
@@ -37,14 +93,14 @@ router.post('/', async (req, res) => {
         return res.status(400).json({ error: 'Titre et date de début requis' });
     }
 
-    // Créer l'événement
     const { data: event, error } = await supabase
         .from('events')
         .insert({
             user_id: req.user.id,
             title, description, start_at, end_at,
             all_day: all_day || false,
-            location, recurrence: recurrence || 'none',
+            location,
+            recurrence: recurrence || 'none',
             color, category_id
         })
         .select()
@@ -52,74 +108,17 @@ router.post('/', async (req, res) => {
 
     if (error) return res.status(500).json({ error: error.message });
 
-    // Créer les rappels si fournis [5, 15, 60, 1440]
     if (reminders && reminders.length > 0) {
         const reminderRows = reminders.map(offset_min => ({
             event_id: event.id,
             offset_min,
             remind_at: new Date(new Date(start_at).getTime() - offset_min * 60000).toISOString()
         }));
-
         await supabase.from('reminders').insert(reminderRows);
     }
 
     res.status(201).json(event);
 });
-
-// POST /api/events/import-preview
-router.post('/import-preview', authMiddleware, async (req, res) => {
-    const { url } = req.body
-    if (!url) return res.status(400).json({ error: 'URL requise' })
-
-    try {
-        // Télécharger le fichier iCal
-        const response = await fetch(url)
-        const text = await response.text()
-
-        // Parser le format iCal
-        const events = []
-        const blocks = text.split('BEGIN:VEVENT')
-        blocks.shift() // enlever le header
-
-        for (const block of blocks) {
-            const get = (key) => {
-                const match = block.match(new RegExp(`${key}[^:]*:(.+)`))
-                return match ? match[1].trim() : null
-            }
-
-            const dtstart = get('DTSTART')
-            if (!dtstart) continue
-
-            // Parser la date iCal (format: 20260325T100000Z)
-            const parseDate = (d) => {
-                if (!d) return null
-                const clean = d.replace(/[TZ]/g, '')
-                const year = clean.slice(0, 4)
-                const month = clean.slice(4, 6)
-                const day = clean.slice(6, 8)
-                const hour = clean.slice(8, 10) || '00'
-                const min = clean.slice(10, 12) || '00'
-                return new Date(`${year}-${month}-${day}T${hour}:${min}:00Z`).toISOString()
-            }
-
-            events.push({
-                title: get('SUMMARY') || 'Événement importé',
-                description: get('DESCRIPTION') || '',
-                location: get('LOCATION') || '',
-                start_at: parseDate(dtstart),
-                end_at: parseDate(get('DTEND')),
-                date: parseDate(dtstart)?.split('T')[0],
-                time: parseDate(dtstart)?.split('T')[1]?.slice(0, 5),
-                color: '#1A73E8',
-                reminders: [],
-            })
-        }
-
-        res.json(events)
-    } catch (err) {
-        res.status(400).json({ error: 'Impossible de lire ce lien iCal' })
-    }
-})
 
 // PUT /api/events/:id
 router.put('/:id', async (req, res) => {
@@ -156,21 +155,6 @@ router.delete('/:id', async (req, res) => {
 
     if (error) return res.status(500).json({ error: error.message });
     res.json({ success: true, message: 'Événement supprimé' });
-});
-
-// GET /api/events/search?q=...
-router.get('/search', async (req, res) => {
-    const { q } = req.query;
-    if (!q) return res.status(400).json({ error: 'Paramètre q requis' });
-
-    const { data, error } = await supabase
-        .from('events')
-        .select('*, categories(name, color)')
-        .eq('user_id', req.user.id)
-        .ilike('title', `%${q}%`);
-
-    if (error) return res.status(500).json({ error: error.message });
-    res.json(data);
 });
 
 module.exports = router;
