@@ -11,7 +11,18 @@ const { startScheduler } = require('./services/scheduler');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-app.use(cors({ origin: process.env.FRONTEND_URL }));
+app.use(cors({
+    origin: function (origin, callback) {
+        // Autoriser localhost sur tous les ports + l'URL frontend
+        if (!origin ||
+            origin.includes('localhost') ||
+            origin === process.env.FRONTEND_URL) {
+            callback(null, true);
+        } else {
+            callback(new Error('Not allowed by CORS'));
+        }
+    }
+}));
 app.use(express.json());
 
 // Routes
@@ -28,6 +39,6 @@ app.get('/health', (req, res) => {
 // Démarrer le scheduler de rappels
 startScheduler();
 
-app.listen(PORT, () => {
-    console.log(`✅ Serveur démarré sur http://localhost:${PORT}`);
+app.listen(PORT, '0.0.0.0', () => {
+    console.log(`✅ Serveur démarré sur http://0.0.0.0:${PORT}`);
 });
