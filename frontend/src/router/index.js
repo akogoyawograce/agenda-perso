@@ -5,6 +5,11 @@ const router = createRouter({
     history: createWebHistory(),
     routes: [
         {
+            path: '/settings',
+            name: 'Settings',
+            component: () => import('@/views/SettingsView.vue')
+        },
+        {
             path: '/emploi-du-temps',
             component: () => import('@/views/EmploiDuTempsView.vue'),
             meta: { requiresAuth: true }

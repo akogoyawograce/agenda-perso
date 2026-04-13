@@ -10,14 +10,12 @@ import 'screens/home_screen.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Initialiser les locales françaises
   await initializeDateFormatting('fr_FR', null);
 
   await Hive.initFlutter();
   await Hive.openBox('events');
   await Hive.openBox('auth');
 
-  // OneSignal uniquement sur mobile
   if (!kIsWeb) {
     OneSignal.initialize('1702283e-a508-4e9b-bb49-2190dd8453ab');
     await OneSignal.Notifications.requestPermission(true);

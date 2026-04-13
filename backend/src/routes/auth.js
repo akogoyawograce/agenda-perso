@@ -11,30 +11,36 @@ router.post('/register', async (req, res) => {
         return res.status(400).json({ error: 'Tous les champs sont requis' });
     }
 
-    // Créer l'utilisateur dans Supabase Auth
-    const { data: authData, error: authError } = await supabase.auth.admin.createUser({
-        email,
-        password,
-        email_confirm: true,
-    });
+    try {
+        const { data: authData, error: authError } = await supabase.auth.admin.createUser({
+            email,
+            password,
+            email_confirm: true,
+        });
 
-    if (authError) return res.status(400).json({ error: authError.message });
+        if (authError) return res.status(400).json({ error: authError.message });
 
-    // Créer le profil dans la table profiles
-    const { error: profileError } = await supabase
-        .from('profiles')
-        .insert({ id: authData.user.id, full_name });
+        const { error: profileError } = await supabase
+            .from('profiles')
+            .insert({ id: authData.user.id, full_name });
 
-    if (profileError) return res.status(400).json({ error: profileError.message });
+        if (profileError) return res.status(400).json({ error: profileError.message });
 
-    // Générer le JWT
-    const token = jwt.sign(
-        { id: authData.user.id, email },
-        process.env.JWT_SECRET,
-        { expiresIn: '7d' }
-    );
+        const token = jwt.sign(
+            { id: authData.user.id, email },
+            process.env.JWT_SECRET,
+            { expiresIn: '7d' }
+        );
 
-    res.status(201).json({ token, user: { id: authData.user.id, email, full_name } });
+        res.status(201).json({
+            token,
+            user: { id: authData.user.id, email, full_name }
+        });
+
+    } catch (err) {
+        console.error('Register error:', err);
+        res.status(500).json({ error: 'Erreur interne du serveur' });
+    }
 });
 
 // POST /api/auth/login
@@ -45,26 +51,39 @@ router.post('/login', async (req, res) => {
         return res.status(400).json({ error: 'Email et mot de passe requis' });
     }
 
-    // Vérifier les identifiants via Supabase Auth
-    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+    try {
+        const { data, error } = await supabase.auth.signInWithPassword({
+            email: email.trim().toLowerCase(),
+            password,
+        });
 
-    if (error) return res.status(401).json({ error: 'Identifiants incorrects' });
+        if (error) return res.status(401).json({ error: 'Identifiants incorrects' });
 
-    // Récupérer le profil
-    const { data: profile } = await supabase
-        .from('profiles')
-        .select('full_name')
-        .eq('id', data.user.id)
-        .single();
+        const { data: profile } = await supabase
+            .from('profiles')
+            .select('full_name')
+            .eq('id', data.user.id)
+            .single();
 
-    // Générer le JWT
-    const token = jwt.sign(
-        { id: data.user.id, email },
-        process.env.JWT_SECRET,
-        { expiresIn: '7d' }
-    );
+        const token = jwt.sign(
+            { id: data.user.id, email: data.user.email },
+            process.env.JWT_SECRET,
+            { expiresIn: '7d' }
+        );
 
-    res.json({ token, user: { id: data.user.id, email, full_name: profile?.full_name } });
+        res.json({
+            token,
+            user: {
+                id: data.user.id,
+                email: data.user.email,
+                full_name: profile?.full_name,
+            }
+        });
+
+    } catch (err) {
+        console.error('Login error:', err);
+        res.status(500).json({ error: 'Erreur interne du serveur' });
+    }
 });
 
 module.exports = router;

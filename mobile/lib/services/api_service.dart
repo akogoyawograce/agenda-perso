@@ -2,12 +2,15 @@ import 'package:dio/dio.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 class ApiService {
-static const String baseUrl = 'http://localhost:3000/api';
-// Sur téléphone réel, remplace par l'IP de ton PC
+static const String baseUrl = 'http://localhost:5000/api';// Sur téléphone réel, remplace par l'IP de ton PC
   // Ex: http://192.168.1.XX:3000/api
 
   static final _storage = const FlutterSecureStorage();
   static final _dio = Dio(BaseOptions(baseUrl: baseUrl));
+  static Future<List<dynamic>> importPreview(String url) async {
+  final res = await _dio.post('/events/import-preview', data: {'url': url});
+  return res.data;
+}
 
   static Future<void> init() async {
     _dio.interceptors.add(InterceptorsWrapper(
@@ -79,4 +82,8 @@ static const String baseUrl = 'http://localhost:3000/api';
   static Future<void> deleteToken() async {
     await _storage.delete(key: 'token');
   }
+  static Future<Map<String, dynamic>> updateEvent(int id, Map<String, dynamic> data) async {
+  final res = await _dio.put('/events/$id', data: data);
+  return res.data;
+}
 }

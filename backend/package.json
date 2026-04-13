@@ -3,7 +3,8 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node src/index.js"
   },
   "keywords": [],
   "author": "",
@@ -19,6 +20,8 @@
     "jsonwebtoken": "^9.0.3",
     "node-cron": "^4.2.1",
     "node-ical": "^0.25.6",
+    "nodemailer": "^8.0.4",
+    "pdfkit": "^0.18.0",
     "zod": "^4.3.6"
   }
 }

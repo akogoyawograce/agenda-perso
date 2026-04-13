@@ -1,7 +1,6 @@
 <template>
   <div class="min-h-screen bg-gray-50">
 
-    <!-- Header -->
     <header class="bg-white shadow-sm px-6 py-4 flex justify-between items-center">
       <div class="flex items-center gap-4">
         <button @click="router.push('/calendar')"
@@ -10,7 +9,14 @@
         </button>
         <h1 class="text-xl font-bold text-blue-600">🗓 Emploi du temps</h1>
       </div>
+
       <div class="flex items-center gap-3">
+        <!-- Nouveau bouton Écouter -->
+        <button @click="speakTodayProgram"
+          class="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg text-sm font-medium hover:bg-purple-700 transition">
+          🗣️ Écouter le programme
+        </button>
+
         <button @click="exportWeekPDF"
           class="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg text-sm font-medium hover:bg-green-700">
           📄 Exporter PDF
@@ -22,7 +28,6 @@
       </div>
     </header>
 
-    <!-- Navigation semaine -->
     <div class="max-w-7xl mx-auto px-4 py-4">
       <div class="flex justify-between items-center mb-4">
         <button @click="prevWeek"
@@ -41,10 +46,8 @@
         </button>
       </div>
 
-      <!-- Grille emploi du temps -->
       <div class="bg-white rounded-2xl shadow overflow-hidden">
 
-        <!-- En-tête jours -->
         <div class="grid gap-0" :style="gridStyle">
           <div class="bg-gray-100 border-r border-b border-gray-200 p-3 text-center">
             <span class="text-xs text-gray-400 font-medium">HEURE</span>
@@ -67,25 +70,21 @@
           </div>
         </div>
 
-        <!-- Lignes horaires -->
         <div v-for="hour in hours" :key="hour"
           class="grid gap-0 border-b border-gray-100"
           :style="gridStyle">
 
-          <!-- Colonne heure -->
           <div class="border-r border-gray-200 p-2 text-center bg-gray-50">
             <span class="text-xs font-medium text-gray-500">
               {{ String(hour).padStart(2, '0') }}:00
             </span>
           </div>
 
-          <!-- Colonne par jour — CLIQUABLE -->
           <div v-for="day in weekDays" :key="day.date"
             class="border-r border-gray-100 min-h-14 p-1 relative cursor-pointer hover:bg-yellow-50 transition group"
             :class="day.isToday ? 'bg-blue-50/30' : ''"
             @click="openAddEvent(day.date, hour)">
 
-            <!-- Événements existants -->
             <div v-for="event in getEventsAt(day.date, hour)" :key="event.id"
               @click.stop
               class="rounded-lg px-2 py-1 mb-1 text-xs hover:opacity-80 transition"
@@ -100,7 +99,6 @@
               </p>
             </div>
 
-            <!-- Indicateur + au hover -->
             <div class="hidden group-hover:flex absolute inset-0 items-center justify-center pointer-events-none">
               <span class="text-gray-300 text-2xl font-light">+</span>
             </div>
@@ -109,7 +107,6 @@
 
       </div>
 
-      <!-- Légende événements de la semaine -->
       <div class="mt-4 bg-white rounded-xl shadow p-4">
         <p class="text-sm font-medium text-gray-700 mb-3">
           Événements cette semaine ({{ weekEvents.length }})
@@ -139,7 +136,7 @@
 
     </div>
 
-    <!-- ── Modal ajout événement ── -->
+    <!-- Modal d'ajout d'événement (inchangé) -->
     <div v-if="showAddForm"
       class="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
       <div class="bg-white rounded-2xl shadow-xl p-6 w-full max-w-md mx-4">
@@ -150,37 +147,29 @@
         </p>
 
         <div class="space-y-3">
-
-          <!-- Titre -->
           <input v-model="newEvent.title"
             placeholder="Titre de l'événement *"
             class="w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400" />
 
-          <!-- Heures -->
           <div class="flex gap-3">
             <div class="flex-1">
-              <label class="text-xs text-gray-500 mb-1 block">🕐 Heure début</label>
+              <label class="text-xs text-gray-500 mb-1 block">🕐 Début</label>
               <input v-model="newEvent.startTime" type="time"
-                class="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400" />
+                class="w-full border rounded-lg px-3 py-2 focus:outline-none" />
             </div>
             <div class="flex-1">
-              <label class="text-xs text-gray-500 mb-1 block">🕑 Heure fin</label>
+              <label class="text-xs text-gray-500 mb-1 block">🕑 Fin</label>
               <input v-model="newEvent.endTime" type="time"
-                class="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400" />
+                class="w-full border rounded-lg px-3 py-2 focus:outline-none" />
             </div>
           </div>
 
-          <!-- Lieu -->
-          <input v-model="newEvent.location"
-            placeholder="📍 Lieu (optionnel)"
-            class="w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400" />
+          <input v-model="newEvent.location" placeholder="📍 Lieu"
+            class="w-full border rounded-lg px-4 py-2 focus:outline-none" />
 
-          <!-- Description -->
-          <textarea v-model="newEvent.description"
-            placeholder="Description (optionnel)"
-            class="w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400 h-16 resize-none" />
+          <textarea v-model="newEvent.description" placeholder="Description"
+            class="w-full border rounded-lg px-4 py-2 h-16 resize-none focus:outline-none" />
 
-          <!-- Couleurs -->
           <div class="flex items-center gap-3">
             <label class="text-sm text-gray-600">🎨 Couleur :</label>
             <div class="flex gap-2">
@@ -188,27 +177,15 @@
                 @click="newEvent.color = c"
                 class="w-7 h-7 rounded-full cursor-pointer border-2 transition"
                 :style="{ backgroundColor: c }"
-                :class="newEvent.color === c
-                  ? 'border-gray-800 scale-110'
-                  : 'border-transparent'">
+                :class="newEvent.color === c ? 'border-gray-800 scale-110' : 'border-transparent'">
               </div>
             </div>
           </div>
-
-          <!-- Résumé -->
-          <div v-if="newEvent.title"
-            class="bg-blue-50 border border-blue-200 rounded-lg px-4 py-2 text-sm text-blue-700">
-            📌 <strong>{{ newEvent.title }}</strong>
-            {{ newEvent.location ? '— ' + newEvent.location : '' }}
-            <br/>
-            {{ formatSlotLabel }} · {{ newEvent.startTime }} → {{ newEvent.endTime }}
-          </div>
-
         </div>
 
         <p v-if="addError" class="text-red-500 text-sm mt-2">{{ addError }}</p>
 
-        <div class="flex gap-3 mt-4">
+        <div class="flex gap-3 mt-6">
           <button @click="showAddForm = false"
             class="flex-1 border border-gray-300 text-gray-600 py-2 rounded-lg hover:bg-gray-50">
             Annuler
@@ -221,7 +198,6 @@
 
       </div>
     </div>
-
   </div>
 </template>
 
@@ -229,7 +205,9 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useEventsStore } from '@/stores/events'
+import { useAuthStore } from '@/stores/auth'          // ← Ajouté
 import { exportEmploiDuTempsPDF } from '@/services/export'
+import { speakDailyProgram } from '@/services/tts'     // ← Ajouté
 import api from '@/services/api'
 import * as XLSX from 'xlsx'
 import dayjs from 'dayjs'
@@ -245,15 +223,42 @@ dayjs.locale('fr')
 
 const router      = useRouter()
 const eventsStore = useEventsStore()
+const authStore   = useAuthStore()                    // ← Ajouté
+
 const currentWeek = ref(dayjs().startOf('isoWeek'))
 
-// ── Grille ────────────────────────────────────────────────────────────────
-const hours    = Array.from({ length: 16 }, (_, i) => i + 6)
-const gridStyle = computed(() => ({
-  gridTemplateColumns: `80px repeat(7, 1fr)`
-}))
+// ── TTS : Lecture du programme DU JOUR seulement ──
+const speakTodayProgram = () => {
+  const today = dayjs().format('YYYY-MM-DD')
+  const todayEvents = eventsStore.events
+    .filter(e => dayjs(e.start_at).format('YYYY-MM-DD') === today)
+    .sort((a, b) => dayjs(a.start_at).diff(dayjs(b.start_at)))
 
-// ── Jours de la semaine ───────────────────────────────────────────────────
+  const userName = authStore.user?.full_name || authStore.user?.email?.split('@')[0] || 'cher utilisateur'
+
+  speakDailyProgram(userName, todayEvents)
+}
+
+// ── OPTIMISATION : Dictionnaire d'accès rapide ──
+const eventsMap = computed(() => {
+  const map = {}
+  eventsStore.events.forEach(event => {
+    const d = dayjs(event.start_at).local()
+    const key = `${d.format('YYYY-MM-DD')}-${d.hour()}`
+    if (!map[key]) map[key] = []
+    map[key].push(event)
+  })
+  return map
+})
+
+function getEventsAt(date, hour) {
+  return eventsMap.value[`${date}-${hour}`] || []
+}
+
+// ── Grille & Jours ──
+const hours    = Array.from({ length: 16 }, (_, i) => i + 6)
+const gridStyle = { gridTemplateColumns: `80px repeat(7, 1fr)` }
+
 const weekDays = computed(() =>
   Array.from({ length: 7 }, (_, i) => {
     const day = currentWeek.value.add(i, 'day')
@@ -267,105 +272,63 @@ const weekDays = computed(() =>
   })
 )
 
-const weekLabel = computed(() =>
-  currentWeek.value.format('D MMMM YYYY')
-)
-
+const weekLabel = computed(() => currentWeek.value.format('D MMMM YYYY'))
 const weekRange = computed(() => {
   const end = currentWeek.value.add(6, 'day')
   return `${currentWeek.value.format('D MMM')} → ${end.format('D MMM YYYY')}`
 })
 
 const weekEvents = computed(() => {
-  const start = currentWeek.value
-  const end   = currentWeek.value.add(6, 'day')
+  const start = currentWeek.value.startOf('day')
+  const end   = currentWeek.value.add(6, 'day').endOf('day')
   return eventsStore.events.filter(e => {
     const d = dayjs(e.start_at)
-    return d.isSameOrAfter(start, 'day') && d.isSameOrBefore(end, 'day')
+    return d.isSameOrAfter(start) && d.isSameOrBefore(end)
   }).sort((a, b) => dayjs(a.start_at).diff(dayjs(b.start_at)))
 })
 
-function getEventsAt(date, hour) {
-  return eventsStore.events.filter(e => {
-    const d = dayjs(e.start_at).local()
-    return d.format('YYYY-MM-DD') === date && d.hour() === hour
-  })
-}
+// ── Formatage ──
+const formatHour = (dt) => dayjs(dt).format('HH:mm')
+const formatFullDate = (dt) => dayjs(dt).format('ddd D MMM à HH:mm')
 
-function formatHour(dt)     { return dayjs(dt).format('HH:mm') }
-function formatFullDate(dt) { return dayjs(dt).format('ddd D MMM à HH:mm') }
-
-// ── Navigation semaines ───────────────────────────────────────────────────
-function prevWeek() {
-  currentWeek.value = currentWeek.value.subtract(1, 'week')
-  loadWeekEvents()
-}
-function nextWeek() {
-  currentWeek.value = currentWeek.value.add(1, 'week')
-  loadWeekEvents()
-}
+// ── Navigation ──
 async function loadWeekEvents() {
-  await eventsStore.fetchMonth(
-    currentWeek.value.year(),
-    currentWeek.value.month() + 1
-  )
+  await eventsStore.fetchMonth(currentWeek.value.year(), currentWeek.value.month() + 1)
 }
+function prevWeek() { currentWeek.value = currentWeek.value.subtract(1, 'week'); loadWeekEvents() }
+function nextWeek() { currentWeek.value = currentWeek.value.add(1, 'week'); loadWeekEvents() }
 
-// ── Export ────────────────────────────────────────────────────────────────
+// ── Export ──
 function exportWeekPDF() {
-  if (weekEvents.value.length === 0) {
-    alert('Aucun événement cette semaine à exporter')
-    return
-  }
+  if (weekEvents.value.length === 0) return alert('Aucun événement')
   exportEmploiDuTempsPDF(weekEvents.value, currentWeek.value.toDate())
 }
-
 function exportWeekExcel() {
-  if (weekEvents.value.length === 0) {
-    alert('Aucun événement cette semaine à exporter')
-    return
-  }
+  if (weekEvents.value.length === 0) return alert('Aucun événement')
   const wsData = [
-    ['Emploi du temps — Semaine du ' + weekLabel.value],
-    [],
-    ['Jour','Date','Heure début','Heure fin','Titre','Lieu','Description'],
+    ['Emploi du temps — Semaine du ' + weekLabel.value], [],
+    ['Jour','Date','Début','Fin','Titre','Lieu','Description'],
     ...weekEvents.value.map(e => [
-      dayjs(e.start_at).format('dddd'),
-      dayjs(e.start_at).format('DD/MM/YYYY'),
-      dayjs(e.start_at).format('HH:mm'),
-      e.end_at ? dayjs(e.end_at).format('HH:mm') : '-',
-      e.title, e.location || '-', e.description || '-',
+      dayjs(e.start_at).format('dddd'), dayjs(e.start_at).format('DD/MM/YYYY'),
+      dayjs(e.start_at).format('HH:mm'), e.end_at ? dayjs(e.end_at).format('HH:mm') : '-',
+      e.title, e.location || '-', e.description || '-'
     ])
   ]
   const ws = XLSX.utils.aoa_to_sheet(wsData)
-  ws['!cols'] = [
-    {wch:12},{wch:12},{wch:12},{wch:12},{wch:30},{wch:20},{wch:40}
-  ]
   const wb = XLSX.utils.book_new()
   XLSX.utils.book_append_sheet(wb, ws, 'Emploi du temps')
   XLSX.writeFile(wb, `emploi-du-temps-${currentWeek.value.format('YYYY-MM-DD')}.xlsx`)
 }
 
-// ── Ajout d'événement depuis la grille ────────────────────────────────────
+// ── Ajout d'événement ──
 const showAddForm  = ref(false)
 const addLoading   = ref(false)
 const addError     = ref('')
 const selectedSlot = ref({ date: '', hour: 8 })
+const colorOptions = ['#1A73E8','#E8711A','#0F966E','#E8001A','#9C27B0','#FF9800']
+const newEvent = ref({ title: '', location: '', description: '', startTime: '', endTime: '', color: '#1A73E8' })
 
-const colorOptions = [
-  '#1A73E8','#E8711A','#0F966E',
-  '#E8001A','#9C27B0','#FF9800',
-]
-
-const newEvent = ref({
-  title: '', location: '', description: '',
-  startTime: '08:00', endTime: '09:00', color: '#1A73E8'
-})
-
-const formatSlotLabel = computed(() => {
-  if (!selectedSlot.value.date) return ''
-  return dayjs(selectedSlot.value.date).format('dddd D MMMM YYYY')
-})
+const formatSlotLabel = computed(() => selectedSlot.value.date ? dayjs(selectedSlot.value.date).format('dddd D MMMM YYYY') : '')
 
 function openAddEvent(date, hour) {
   selectedSlot.value = { date, hour }
@@ -375,34 +338,18 @@ function openAddEvent(date, hour) {
     endTime:   `${String(hour + 1).padStart(2,'0')}:00`,
     color: '#1A73E8'
   }
-  addError.value    = ''
+  addError.value = ''
   showAddForm.value = true
 }
 
 async function saveNewEvent() {
-  if (!newEvent.value.title) {
-    addError.value = 'Le titre est requis'
-    return
-  }
+  if (!newEvent.value.title) return addError.value = 'Le titre est requis'
   addLoading.value = true
-  addError.value   = ''
   try {
-    const start_at = new Date(
-      `${selectedSlot.value.date}T${newEvent.value.startTime}`
-    ).toISOString()
-    const end_at = new Date(
-      `${selectedSlot.value.date}T${newEvent.value.endTime}`
-    ).toISOString()
+    const start_at = dayjs(`${selectedSlot.value.date} ${newEvent.value.startTime}`).toISOString()
+    const end_at   = dayjs(`${selectedSlot.value.date} ${newEvent.value.endTime}`).toISOString()
 
-    await api.post('/events', {
-      title:       newEvent.value.title,
-      description: newEvent.value.description,
-      location:    newEvent.value.location,
-      color:       newEvent.value.color,
-      start_at, end_at,
-      reminders:   [],
-    })
-
+    await api.post('/events', { ...newEvent.value, start_at, end_at, reminders: [] })
     showAddForm.value = false
     await loadWeekEvents()
   } catch (e) {
