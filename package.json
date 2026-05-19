@@ -1,0 +1,7 @@
+{
+  "name": "agenda-perso-backend",
+  "version": "1.0.0",
+  "scripts": {
+    "start": "cd backend && npm install && node src/index.js"
+  }
+}
