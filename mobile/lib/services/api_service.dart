@@ -2,8 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 class ApiService {
-static const String baseUrl = 'http://localhost:5000/api';// Sur téléphone réel, remplace par l'IP de ton PC
-  // Ex: http://192.168.1.XX:3000/api
+  static const String baseUrl = String.fromEnvironment('API_URL', defaultValue: 'http://localhost:5000/api');
 
   static final _storage = const FlutterSecureStorage();
   static final _dio = Dio(BaseOptions(baseUrl: baseUrl));
