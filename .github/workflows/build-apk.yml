@@ -39,7 +39,7 @@ jobs:
       - name: Build APK (debug)
         continue-on-error: true
         run: |
-          flutter build apk --debug --dart-define=API_URL=${{ secrets.API_URL || 'http://10.0.2.2:5000/api' }} 2>&1 | tee build.log || true
+          flutter build apk --debug --dart-define=API_URL=https://dull-ape-13.loca.lt/api 2>&1 | tee build.log || true
 
       - name: Show build errors
         if: always()
